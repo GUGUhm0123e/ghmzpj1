@@ -1,0 +1,1618 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>建筑设计师作品集</title>
+    <style>
+        /* 全局重置+基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+            font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+        }
+
+        /* 横屏提示层 */
+        .orientation-lock {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+            display: none;
+        }
+
+        .orientation-lock.active {
+            display: flex;
+        }
+
+        .orientation-lock-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: rotate 2s infinite ease-in-out;
+        }
+
+        .orientation-lock-text {
+            font-size: 24px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(90deg);
+            }
+        }
+
+        /* 移动设备横屏检测 */
+        @media (max-width: 768px) and (orientation: portrait) {
+            .orientation-lock {
+                display: flex;
+            }
+        }
+
+        @media (max-width: 768px) and (orientation: landscape) {
+            .orientation-lock {
+                display: none;
+            }
+        }
+
+        /* 核心容器 - 左右分栏 */
+        .visual-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* 左侧黑色区域 - 宽度变化实现水平收缩 */
+        .left-panel {
+            width: 50%;
+            height: 100%;
+            background-color: #000;
+            color: #fff;
+            padding: 60px 50px;
+            position: relative;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2;
+            flex-shrink: 0;
+        }
+
+        .left-panel.shrink {
+            width: calc(50% / 3); 
+        }
+
+        .left-panel.complete-shrink {
+            width: 0;
+            padding: 0;
+        }
+
+        /* 左侧文字容器 */
+        .left-bottom-container {
+            position: absolute;
+            bottom: 60px;
+            left: 50px;
+            width: calc(100% - 100px);
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .left-panel.shrink .left-bottom-container {
+            opacity: 0;
+        }
+
+        .left-panel.complete-shrink .left-bottom-container {
+            opacity: 0;
+            display: none;
+        }
+
+        .left-footer-text {
+            font-size: 36px;
+            line-height: 2;
+            max-width: 85%;
+            font-weight: 500;
+        }
+        
+        .desc-text {
+            font-size: 14px;
+            font-weight: 300;
+            line-height: 1.8;
+            margin-top: 8px;
+        }
+
+        /* 左侧作品标题容器 */
+        .left-work-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: left;
+            width: 90%;
+            opacity: 0;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+
+        .left-work-title.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .work-title-main {
+            font-size: clamp(10px, 1.5vw, 20px);
+            font-weight: 700;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            max-width: 100%;
+            word-wrap: normal;
+            display: block;
+            box-sizing: border-box;
+        }
+        
+        .work-title-pinyin {
+            font-size: clamp(6px, 0.8vw, 9px);
+            opacity: 0.7;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            max-width: 100%;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        .work-title-sub {
+            font-size: clamp(8px, 1.1vw, 12px);
+            opacity: 0.8;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            white-space: nowrap;
+            max-width: 100%;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        .work-desc {
+            font-size: 12px;
+            line-height: 1.8;
+            opacity: 0.9;
+        }
+
+        /* 右侧浅灰色区域 */
+        .right-panel {
+            flex-grow: 1;
+            height: 100%;
+            background-color: #f8f8f8;
+            padding: 0;
+            position: relative;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        /* 作品长图容器 */
+        .works-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: translateY(100%);
+            opacity: 0;
+            pointer-events: none;
+            overflow-x: hidden; 
+            overflow-y: auto; 
+            scroll-behavior: smooth; 
+            scrollbar-width: none;
+            transition: transform 0.8s linear, 
+                        opacity 0.5s linear 0.2s;
+        }
+
+        .works-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .works-container.active {
+            transform: translateY(0); 
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* 单个作品项 */
+        .work-item {
+            width: 100%; 
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+            cursor: default;
+            opacity: 1;
+            transform: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .work-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+        }
+
+        .work-item {
+            position: relative;
+        }
+
+        .click-hint-btn {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: 300;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .click-hint-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* 个人信息样式 */
+        .personal-info {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            opacity: 1;
+            transition: opacity 0.5s ease 0.2s;
+            margin: 0;
+            padding-left: 80px;
+            padding-right: 80px;
+            position: relative;
+            z-index: 2;
+        }
+        .left-panel.shrink ~ .right-panel .personal-info,
+        .left-panel.complete-shrink ~ .right-panel .personal-info {
+            opacity: 0;
+            pointer-events: none;
+            display: none;
+        }
+
+        .info-title {
+            font-size: 38px;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+        }
+
+        .intro-text {
+            font-size: 18px;
+            line-height: 2;
+            color: #333;
+            font-weight: 300;
+            max-width: 80%;
+        }
+
+        /* 作品集标题样式 */
+        .works-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
+            z-index: 4;
+        }
+
+        .works-title.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .works-title-cn {
+            font-size: 48px;
+            font-weight: 700;
+            color: #000;
+            letter-spacing: 4px;
+            display: block;
+            margin-bottom: 16px;
+        }
+
+        .works-title-en {
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            display: block;
+        }
+
+        /* 作品弹窗样式 */
+        .work-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .work-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            width: 90%;
+            height: 90%;
+            position: relative;
+        }
+
+        .modal-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .modal-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            z-index: 10;
+        }
+
+        .modal-btn:hover {
+            background: rgba(255,255,255,0.4);
+        }
+
+        .modal-prev {
+            left: 20px;
+        }
+
+        .modal-next {
+            right: 20px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            z-index: 10;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.4);
+        }
+
+        .modal-index {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 16px;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 16px;
+            border-radius: 20px;
+            z-index: 10;
+        }
+
+        /* 联系方式展示区域 - 核心布局调整 */
+        .contact-section {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: #f8f8f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
+            z-index: 1;
+            padding: 40px;
+        }
+
+        .contact-section.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* 联系方式容器 - 调整为左右布局，右侧显示个人照片 */
+        .contact-container {
+            display: flex;
+            flex-direction: row; /* 修改：横向布局 */
+            align-items: center; /* 垂直居中 */
+            max-width: 1200px;
+            width: 100%;
+            gap: 60px; /* 文字和照片间距 */
+        }
+
+        .contact-info {
+            flex: 1; /* 占据剩余空间 */
+            display: flex;
+            flex-direction: column;
+            gap: 8px; /* 大幅缩小整体间距 */
+            font-weight: normal !important;
+            font-weight: 400 !important;
+        }
+
+        .contact-info * {
+            font-weight: normal !important;
+            font-weight: 400 !important;
+            font-weight: 300 !important;
+        }
+
+        .contact-title {
+            font-size: 36px;
+            font-weight: normal;
+            color: #000;
+            margin-bottom: 15px; /* 调整标题下方间距 */
+            letter-spacing: 3px;
+        }
+
+        /* 强制联系方式区域所有文字不加粗 */
+        #contactSection *,
+        #contactSection .contact-item,
+        #contactSection .contact-label,
+        #contactSection .contact-value {
+            font-weight: normal !important;
+            font-style: normal !important;
+            text-decoration: none !important;
+        }
+
+        /* 联系方式文字容器 */
+        .contact-items {
+            display: flex;
+            flex-direction: column;
+            gap: 5px; /* 缩小电话/邮箱间距 */
+            margin-bottom: 15px; /* 邮箱和二维码之间的间距 */
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+            color: #333;
+            gap: 0px;
+            font-weight: normal !important;
+        }
+
+        .contact-label {
+            font-size: 18px;
+            font-weight: normal !important;
+            color: #000;
+            width: auto;
+            text-align: left;
+        }
+
+        .contact-value {
+            font-size: 18px;
+            font-weight: normal !important;
+            font-style: normal !important;
+            text-decoration: none !important;
+            color: #333;
+        }
+
+        /* 二维码容器 - 显示文字和图片 */
+        .qrcode-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+        .qrcode-text {
+            display: block; /* 显示微信二维码文字 */
+            font-size: 14px;
+            color: #666;
+            letter-spacing: 1px;
+            text-align: left;
+        }
+
+        .qrcode-img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border: none;
+            background: #fff;
+            padding: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* 个人照片样式 - 修改：显示照片并调整样式 */
+        .personal-photo {
+            display: block; /* 显示照片 */
+            width: 200px; /* 照片宽度 */
+            height: auto; /* 自适应高度 */
+            border-radius: 8px; /* 圆角效果 */
+            object-fit: cover;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* 轻微阴影 */
+        }
+
+        /* 移动端适配 - 联系方式区域 */
+        @media (max-width: 768px) {
+            .contact-container {
+                flex-direction: row; /* 保持与桌面端一致的横向布局 */
+                gap: 40px;
+                align-items: center;
+                flex-wrap: nowrap;
+                justify-content: center;
+                padding: 20px;
+            }
+
+            .contact-info {
+                gap: 10px;
+                flex: 1;
+                min-width: 0;
+                text-align: left;
+            }
+
+            .contact-title {
+                font-size: 18px;
+                margin-bottom: 15px;
+                text-align: center;
+            }
+
+            /* 强制联系方式区域所有文字不加粗 */
+            #contactSection *,
+            #contactSection .contact-item,
+            #contactSection .contact-label,
+            #contactSection .contact-value {
+                font-weight: normal !important;
+                font-style: normal !important;
+                text-decoration: none !important;
+            }
+
+            .contact-item {
+                font-size: 14px;
+                gap: 10px;
+                font-weight: normal !important;
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+            }
+
+            .contact-items {
+                gap: 8px;
+                margin-bottom: 15px;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .contact-label {
+                font-size: 14px;
+                width: auto;
+                font-weight: normal !important;
+                flex-shrink: 0;
+            }
+
+            .contact-value {
+                font-size: 14px;
+                font-weight: normal !important;
+                font-style: normal !important;
+                text-decoration: none !important;
+                color: #333;
+                flex-shrink: 1;
+                min-width: 0;
+                text-align: justify;
+                -webkit-text-size-adjust: 100%;
+            }
+
+            .qrcode-img {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .personal-photo {
+                width: 120px; /* 移动端照片大小 */
+                border-radius: 8px;
+            }
+            
+            .qrcode-container {
+                align-items: center;
+                flex-shrink: 0;
+            }
+        }
+
+        /* 移动端整体适配 */
+        @media (max-width: 768px) {
+            .visual-container {
+                flex-direction: row;
+            }
+            .left-panel {
+                width: 50%;
+                min-height: 100vh;
+                padding: 30px 25px;
+            }
+            .left-panel.shrink {
+                width: 15%;
+                min-height: 100vh;
+            }
+            .left-panel.complete-shrink {
+                width: 0;
+                min-height: 100vh;
+                padding: 0;
+            }
+            .right-panel {
+                width: 50%;
+                min-height: 100vh;
+                padding: 0;
+            }
+            .left-panel.shrink ~ .right-panel {
+                width: 85%;
+                min-height: 100vh;
+            }
+            .left-panel.complete-shrink ~ .right-panel {
+                width: 100%;
+                min-height: 100vh;
+            }
+            .left-bottom-container {
+                bottom: 10px;
+                left: 10px;
+                width: calc(100% - 20px);
+                text-align: left;
+            }
+            .left-footer-text {
+                font-size: clamp(12px, 3vw, 18px);
+                line-height: 1.3;
+                white-space: normal;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                text-align: justify;
+                margin: 0;
+                padding: 0;
+                -webkit-text-size-adjust: 100%;
+            }
+            .desc-text {
+                font-size: clamp(8px, 2vw, 10px);
+                line-height: 1.4;
+                white-space: normal;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                text-align: justify;
+                margin: 5px 0 0 0;
+                padding: 0;
+                -webkit-text-size-adjust: 100%;
+            }
+            .personal-info {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+            .works-title-cn {
+                font-size: clamp(16px, 4vw, 22px);
+                letter-spacing: 2px;
+            }
+            .works-title-en {
+                font-size: clamp(9px, 2.2vw, 11px);
+                letter-spacing: 1.2px;
+            }
+            .info-title {
+                font-size: clamp(12px, 3vw, 14px);
+                margin-bottom: 12px;
+            }
+            .intro-text {
+                font-size: clamp(8px, 2vw, 10px);
+                max-width: 80%;
+                line-height: 1.5;
+                text-align: justify;
+                -webkit-text-size-adjust: 100%;
+            }
+            .work-title-main {
+                font-size: clamp(10px, 2.5vw, 14px);
+                line-height: 1.3;
+                white-space: normal;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                text-align: left;
+                margin: 0;
+                padding: 0;
+            }
+            .work-title-pinyin {
+                font-size: clamp(6px, 1.5vw, 8px);
+                line-height: 1.3;
+                white-space: normal;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                text-align: left;
+                margin: 2px 0 0 0;
+                padding: 0;
+            }
+            .work-title-sub {
+                font-size: clamp(6px, 1.5vw, 8px);
+                line-height: 1.3;
+                margin: 2px 0 4px 0;
+                white-space: normal;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                text-align: left;
+                padding: 0;
+            }
+            .work-desc {
+                font-size: clamp(6px, 1.5vw, 8px);
+                line-height: 1.3;
+                max-height: none;
+                overflow-y: visible;
+                white-space: normal;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                text-align: justify;
+                margin: 0;
+                padding: 0;
+                -webkit-text-size-adjust: 100%;
+            }
+            .modal-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+            .modal-close {
+                width: 30px;
+                height: 30px;
+                font-size: 16px;
+            }
+            .work-item {
+                height: 85vh;
+            }
+
+            /* 安卓设备特定优化 */
+            @media screen and (-webkit-min-device-pixel-ratio: 0) {
+                .left-footer-text,
+                .desc-text,
+                .intro-text,
+                .work-desc,
+                .contact-value {
+                    -webkit-text-size-adjust: none;
+                    text-size-adjust: none;
+                    letter-spacing: 0.01em;
+                }
+            }
+
+            /* 针对安卓浏览器的字体渲染优化 */
+            @supports not (-webkit-touch-callout: none) {
+                .left-footer-text,
+                .desc-text,
+                .intro-text,
+                .work-desc,
+                .contact-value {
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                    text-rendering: optimizeLegibility;
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 横屏提示层 -->
+    <div class="orientation-lock" id="orientationLock">
+        <div class="orientation-lock-icon">📱</div>
+        <div class="orientation-lock-text">请将设备横屏以获得最佳体验</div>
+    </div>
+
+    <div class="visual-container" id="visualContainer">
+        <!-- 左侧黑色区域 -->
+        <div class="left-panel" id="leftPanel">
+            <div class="left-bottom-container">
+                <div class="left-footer-text">
+                    策略思维|人文气质
+                    <div class="desc-text">
+                        在建筑与空间设计专业以理性科学的设计策略及创意方法，提供设计与工程的最佳解决方案。在设计中，亦关注当代美学、文化、艺术与功能的合一，根据每一个空间的特性，塑造其俊逸灵动、润雅圆融的人文气质。
+                    </div>
+                </div>
+            </div>
+            <div class="left-work-title" id="leftWorkTitle">
+                <div class="work-title-main" id="workTitleMain">深圳泰宁小学</div>
+                <div class="work-title-pinyin" id="workTitlePinyin">SHEN ZHEN TAI NING XIAO XUE</div>
+                <div class="work-title-sub" id="workTitleSub">校园建筑 / 中标落地</div>
+                <div class="work-desc" id="workDesc">
+                    该项目为深圳市泰宁小学新建工程，项目选址于罗湖区莲塘片区，总建筑面积约2.8万平方米，规划36个教学班。设计以"成长之树"为核心概念，通过多层次的立体庭院、灵活的教学空间和丰富的垂直绿化，打造充满活力的现代化校园，兼顾实用性与人文关怀，最终成功中标并落地实施。
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧浅灰色区域 -->
+        <div class="right-panel" id="rightPanel">
+            <div class="personal-info" id="about">
+                <div class="info-title">建筑设计师 / 主创设计师</div>
+                <div class="intro-text">
+                    Hi~我叫古宏铭，毕业于桂林理工大学，拥有8年深圳建筑设计行业实战经验，深耕建筑方案设计全流程，适配建筑设计师、建筑方案设计师、建筑主创设计师多岗位需求，主导和参与50+办公、学校、酒店、产业园等多业态项目设计，且多个落地项目。<br><br>
+                    擅长项目概念阶段总图规划、平面功能、造型设计和小规模建筑施工图设计。拥有丰富的投标、项目落地实战经验，成功中标深圳市泰宁小学以及多个项目入围。<br><br>
+                    具备成熟的主创设计与团队协作能力，可独立完成项目全流程方案设计，也能带领团队开展工作，精准对接甲方及合作单位各专业需求，快速响应并解决设计过程中的问题。精通各类建筑设计与渲染软件，能高效输出高质量效果图、动画设计成果。
+                </div>
+            </div>
+
+            <!-- 作品集标题 - 保留DOM但永久隐藏 -->
+            <div class="works-title" id="worksTitle">
+                <span class="works-title-cn">建筑设计作品集</span>
+                <span class="works-title-en">ARCHITECTURAL DESIGN PORTFOLIO</span>
+            </div>
+
+            <!-- 作品容器 -->
+            <div class="works-container" id="worksContainer">
+                <div class="work-item" 
+                     data-work-title="深圳泰宁小学" 
+                     data-work-pinyin="SHEN ZHEN TAI NING XIAO XUE" 
+                     data-work-subtitle="校园建筑 / 中标落地"
+                     data-work-desc="该项目为深圳市泰宁小学新建工程，项目选址于罗湖区莲塘片区，总建筑面积约3万平方米，容积率2.28，规划25个教学班。孔子的“习礼大树下，授课杏林旁”生动地描绘了一幅以自然为课堂、在自然中讲习的理想场景在现代城市的密度下，我们通过垂直的手段，构建一个亲近自然，多层次的交往空间，提供了一系列灵活多变的教学场所，鼓励学生在此漫步，玩耍，相遇，形成多样的教学模式，同时其公共属性也在培养学生的社会能力，园林般的空间体验延续了这个城市的文脉，而将其叠加的做法有效的解决本项目校园活动空间不足的缺陷。">
+                    <img src="./images/泰宁小学4.png" alt="校园建筑|落地" class="work-img" 
+                         data-imgs='["./images/泰宁小学4.png","./images/泰宁小学1.png","./images/泰宁小学3.png","./images/泰宁小学2.png","./images/泰宁小学5.png","./images/泰宁小学6.png","./images/泰宁小学7.png","./images/泰宁小学8.png","./images/泰宁小学4.jpg","./images/泰宁小学5.jpg","./images/泰宁小学10.jpg"]'
+                         data-img-index="0">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                <div class="work-item" 
+                     data-work-title="广西玉林寸山水温泉度假酒店" 
+                     data-work-pinyin="GUANG XI YU LIN CUN SHAN SHUI WEN QUAN DU JIA JIU DIAN" 
+                     data-work-subtitle="文旅酒店 / 落地项目"
+                     data-work-desc="项目位于广西玉林市，项目规划面积约100亩，一期用地面积:50204.3平方米，二期用地面积:17314.1平方米主要包含新建客房、宴会厅、温泉景观区、汤屋客房、特色商业街等。新建总建筑面积约4.4万平方米，温泉区约1.5万平方米，公共区景观约4万平方米，最大单体建筑面积约2.85万平方米，建筑高度最高约26米。设计灵感来源于大自然的山水形态。流动退台式的设计是对自然山水的一种抽象化的表达;同时也是陆川温泉，万斛泉源，川流不息的一种具象化的形体延续。流动水平线的设计弱化建筑的体量感，化解了大体量建筑给周边房屋以及人带来的压迫感，同时与周边自然环境相互协调呼应。">
+                    <img src="./images/寸山水温泉度假酒店2.jpg" alt="文旅酒店|落地" class="work-img" 
+                         data-imgs='["./images/寸山水温泉度假酒店2.jpg","./images/寸山水温泉度假酒店7.jpg","./images/寸山水温泉度假酒店1.jpg","./images/寸山水温泉度假酒店3.jpg","./images/寸山水温泉度假酒店4.jpg","./images/寸山水温泉度假酒店5.jpg","./images/寸山水温泉度假酒店6.jpg"]'
+                         data-img-index="1">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                <div class="work-item" 
+                     data-work-title="新沂开发区企业总部" 
+                     data-work-pinyin="XIN YI KAI FA QU QI YE ZONG BU" 
+                     data-work-subtitle="产业办公 / 施工图设计"
+                     data-work-desc="项目位于江苏新沂经济开发区，总建筑面积约6.2万平方米，为开发区重点企业总部办公楼。项目用地东西长约50米，南北长约110米，分为几块用地，整体较为狭长。为了满足不同企业或公司的业态需求，结合用地，设计上采用2、3F的独栋或组合的模式，可满足不同的需求，同时通过设计平台串联联系，提高办公空间灵活性与高效性。">
+                    <img src="./images/新沂开发区企业总部1.jpg" alt="产业办公|施工图" class="work-img"
+                         data-imgs='["./images/新沂开发区企业总部1.jpg","./images/新沂开发区企业总部2.jpg","./images/新沂开发区企业总部3.jpg","./images/新沂开发区企业总部4.jpg","./images/新沂开发区企业总部5.jpg","./images/新沂开发区企业总部6.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                
+                <div class="work-item" 
+                     data-work-title="深圳坪山欧舒特产业园" 
+                     data-work-pinyin="SHEN ZHEN PING SHAN OU SHU TE CHAN YE YUAN" 
+                     data-work-subtitle="产业办公 / 深化设计"
+                     data-work-desc="项目位于深圳市坪山区，总建筑面积约28万平方米，定位为高端智能制造产业园。设计结合坪山产业发展定位，打造集研发、生产、办公于一体的复合型产业空间，本人负责方案深化设计阶段的建筑造型优化、功能布局调整等核心工作。">
+                    <img src="./images/欧舒特产业园2.jpg" alt="产业办公|深化" class="work-img"
+                         data-imgs='["./images/欧舒特产业园2.jpg","./images/欧舒特产业园1.jpg","./images/欧舒特产业园4.jpg","./images/欧舒特产业园3.jpg"]'
+                         data-img-index="0">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                <div class="work-item" 
+                     data-work-title="深圳光明智能研发办公" 
+                     data-work-pinyin="SHEN ZHEN GUANG MING ZHI NENG YAN FA BAN GONG" 
+                     data-work-subtitle="产业办公 / 方案设计"
+                     data-work-desc="项目位于深圳市光明科学城片区，总建筑面积约8.2万平方米，为智能装备研发办公综合体。设计以'科技绿洲'为理念，通过开放式办公空间、共享研发中心、绿色生态退台庭院的结合，打造适合高新技术企业发展的创新型办公环境。">
+                    <img src="./images/深圳光明智能研发办公1.jpg" alt="产业办公|方案" class="work-img"
+                         data-imgs='["./images/深圳光明智能研发办公1.jpg","./images/深圳光明智能研发办公2.jpg"]'
+                         data-img-index="1">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                <div class="work-item" 
+                     data-work-title="深信服网络安全与云计算研发项目" 
+                     data-work-pinyin="SHEN XIN FU WANG LUO AN QUAN YU YUN JI SUAN YAN FA XIANG MU" 
+                     data-work-subtitle="产业办公 / 方案设计"
+                     data-work-desc="项目为深信服科技研发总部扩建工程，该园区为高科技研发开发中心，以网络安全、计算领域为主的技术研发，设计概念以电路板为灵感，将意象符号线条投射于设计空间中去，展示线条的流动性、融合性，联接生活平台、联接未来，行走于其间，体验科技感。">
+                    <img src="./images/深信服网络安全与云计算研发项目3.jpg" alt="产业办公|方案" class="work-img"
+                         data-imgs='["./images/深信服网络安全与云计算研发项目1.jpg","./images/深信服网络安全与云计算研发项目2.jpg","./images/深信服网络安全与云计算研发项目3.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                
+                <div class="work-item" 
+                     data-work-title="深圳龙华大浪时尚酒店项目" 
+                     data-work-pinyin="SHEN ZHEN LONG HUA DA LANG SHI SHANG JIU DIAN XIANG MU" 
+                     data-work-subtitle="商务酒店 / 入围项目"
+                     data-work-desc="项目位于深圳市龙华区大浪时尚小镇，总建筑面积约5.9万平方米，设计：南动北静，酒店布置于相对静谧的北部，并将客房区尽量往高层布置，使之具有高私密性于景观性；减少功能间的消极影响：将功能独立、人流量打且嘈杂的公交站边置于西侧； 大空间组合布置： 将宴会厅、公交站、大会议室等无柱空间集约组合处理；酒店、文化中心等重要空间围绕庭院、广场展开布置，营造开放、友好、活跃的文化氛围，实现资源共享、互利互惠。">
+                    <img src="./images/龙华大浪时尚酒店项目3.jpg" alt="商务酒店|入围" class="work-img"
+                         data-imgs='["./images/龙华大浪时尚酒店项目3.jpg","./images/龙华大浪时尚酒店项目2.jpg","./images/龙华大浪时尚酒店项目1.jpg"]'
+                         data-img-index="0">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                <div class="work-item" 
+                     data-work-title="深圳光明艾特网产业园" 
+                     data-work-pinyin="SHEN ZHEN GUANG MING AI TE WANG CHAN YE YUAN" 
+                     data-work-subtitle="产业办公 / 方案设计"
+                     data-work-desc="项目位于深圳市光明区，总建筑面积约17.8万平方米，为新一代信息技术产业园。整体分为3个区：数据中心、研发办公以及研发厂房，通过层层退台绿色屋顶花园联系起来，打造绿色建筑理念，提升园区整体品质。">
+                    <img src="./images/光明艾特网产业园2.jpg" alt="产业办公|方案" class="work-img"
+                         data-imgs='["./images/光明艾特网产业园2.jpg","./images/光明艾特网产业园1.jpg","./images/光明艾特网产业园3.jpg"]'
+                         data-img-index="1">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                <div class="work-item" 
+                     data-work-title="淮海农资物流园" 
+                     data-work-pinyin="HUAI HAI NONG ZI WU LIU YUAN" 
+                     data-work-subtitle="产业办公 / 深化设计"
+                     data-work-desc="项目位于淮海经济区核心城市，总建筑面积约8.5万平方米，为综合性农资物流产业园。设计兼顾农资仓储、交易展示、物流配送、办公配套等功能，本人负责方案深化阶段的功能布局优化、交通流线设计等工作。">
+                    <img src="./images/淮海农资物流园1.jpg" alt="产业办公|深化" class="work-img"
+                         data-imgs='["./images/淮海农资物流园1.jpg","./images/淮海农资物流园2.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                
+                <div class="work-item" 
+                     data-work-title="福田区实验学校项目设计方案" 
+                     data-work-pinyin="FU TIAN QU SHI YAN XUE XIAO XIANG MU SHE JI FANG AN" 
+                     data-work-subtitle="校园建筑 / 入围项目"
+                     data-work-desc="项目为福田区实验学校改扩建工程，总建筑面积约3.5万平方米。设计以'未来校园'为理念，打造灵活可变的教学空间、丰富的户外活动场地和现代化的教学配套设施，方案在设计竞赛中成功入围。">
+                    <img src="./images/福田区实验学校项目设计方案1（入围）.jpg" alt="校园建筑|入围" class="work-img"
+                         data-imgs='["./images/福田区实验学校项目设计方案1（入围）.jpg","./images/福田区实验学校项目设计方案2（入围）.jpg"]'
+                         data-img-index="0">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                <div class="work-item" 
+                     data-work-title="南海中学改扩建项目设计方案" 
+                     data-work-pinyin="NAN HAI ZHONG XUE GAI KUO JIAN XIANG MU SHE JI FANG AN" 
+                     data-work-subtitle="校园建筑 / 深化设计"
+                     data-work-desc="优化教学空间布局，建筑造型以及室内，本人负责方案深化设计阶段的建筑专业工作。">
+                    <img src="./images/南海中学改扩建项目设计方案1.jpg" alt="校园建筑|深化" class="work-img"
+                         data-imgs='["./images/南海中学改扩建项目设计方案1.jpg","./images/南海中学改扩建项目设计方案2.jpg","./images/南海中学改扩建项目设计方案3.jpg"]'
+                         data-img-index="1">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                <div class="work-item" 
+                     data-work-title="深圳龙华区市前虔贞学校" 
+                     data-work-pinyin="SHEN ZHEN LONG HUA QU SHI QIAN QIAN ZHEN XIAO XUE" 
+                     data-work-subtitle="校园建筑 / 入围项目"
+                     data-work-desc="项目位于深圳市龙华区，为新建九年一贯制学校，总建筑面积约5万平方米，规划54个教学班。学校前身为女子学校，有着浓厚历史文化色彩，通过设计融合虔贞女校的历史文化底蕴，打造具有人文气息的现代化校园，方案在设计竞标中成功入围。">
+                    <img src="./images/深圳龙华区市前虔贞学校（入围）1.jpg" alt="校园建筑|入围" class="work-img"
+                         data-imgs='["./images/深圳龙华区市前虔贞学校（入围）1.jpg","./images/深圳龙华区市前虔贞学校（入围）2.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                 <div class="work-item" 
+                      data-work-title="深圳盐田区云海学校" 
+                      data-work-pinyin="SHEN ZHEN YAN TIAN QU YUN HAI XUE XIAO" 
+                      data-work-subtitle="校园建筑 / 入围项目"
+                      data-work-desc="项目位于深圳市盐田区，云海学校西侧用地扩建工程，新建独立 36 班初中部，与原校区小学部形成 “一校两区、九年一贯” 格局，缓解学位紧张。总建筑面积约3.8万平方米。设计利用山海景观资源，打造开放式、生态化的校园空间，注重自然采光与通风，方案在设计竞赛中成功入围。">
+                    <img src="./images/深圳盐田区云海学校（入围）1.jpg" alt="校园建筑|入围" class="work-img"
+                         data-imgs='["./images/深圳盐田区云海学校（入围）1.jpg","./images/深圳盐田区云海学校（入围）2.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                 <div class="work-item" 
+                      data-work-title="深圳前湾十单元九年一贯制学校" 
+                      data-work-pinyin="SHEN ZHEN QIAN WAN SHI DAN YUAN JIU NIAN YI GUAN ZHI XUE XIAO" 
+                      data-work-subtitle="校园建筑 / 入围项目"
+                      data-work-desc="项目位于深圳市前海合作区，为新建九年一贯制学校，总建筑面积约5.2万平方米。设计对标国际一流标准，打造智慧化、国际化的未来M校园，方案在设计竞标中成功入围。">
+                    <img src="./images/深圳前湾十单元九年一贯制学校1.jpg" alt="校园建筑|入围" class="work-img"
+                         data-imgs='["./images/深圳前湾十单元九年一贯制学校1.jpg","./images/深圳前湾十单元九年一贯制学校2.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                 <div class="work-item" 
+                      data-work-title="崖州湾文体中心竞赛" 
+                      data-work-pinyin="YA ZHOU WAN WEN TI ZHONG XIN JING SAI" 
+                      data-work-subtitle="文体建筑 / 竞赛项目"
+                      data-work-desc="项目位于海南三亚崖州湾科技城，总建筑面积约6.8万平方米，定位为区域性文体中心。设计融合海洋文化与现代建筑美学，打造包含体育馆、文化馆、剧场、市民广场等功能的复合型文体综合体，为竞赛参赛方案。">
+                    <img src="./images/崖州湾文体中心竞赛1.jpg" alt="文体建筑|竞赛" class="work-img"
+                         data-imgs='["./images/崖州湾文体中心竞赛1.jpg","./images/崖州湾文体中心竞赛2.jpg","./images/崖州湾文体中心竞赛3.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                <div class="work-item" 
+                     data-work-title="广西南丹九龙沟森林康养旅游开发项目" 
+                     data-work-pinyin="GUANG XI NAN DAN JIU LONG GOU SEN LIN KANG YANG LÜ YOU KAI FA XIANG MU" 
+                     data-work-subtitle="文旅酒店 / 方案设计"
+                     data-work-desc="项目位于广西南丹县九龙沟景区，总规划面积约20万平方米，定位为高端森林康养旅游度假区。设计融合喀斯特地貌特色与康养理念，打造包含康养酒店、森林步道、温泉中心、民俗体验区等功能的综合性旅游项目。">
+                    <img src="./images/广西南丹九龙沟森林康养旅游开发项目2.jpg" alt="文旅酒店|方案" class="work-img"
+                         data-imgs='["./images/广西南丹九龙沟森林康养旅游开发项目2.jpg","./images/广西南丹九龙沟森林康养旅游开发项目1.jpg","./images/广西南丹九龙沟森林康养旅游开发项目3.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                <div class="work-item" 
+                     data-work-title="宜昌峡州宾馆重建项目" 
+                     data-work-pinyin="YI CHANG XIA ZHOU BIN GUAN CHONG JIAN XIANG MU" 
+                     data-work-subtitle="文旅酒店 / 方案设计"
+                     data-work-desc="项目位于湖北宜昌市核心城区，为峡州宾馆重建工程，总建筑面积约3.2万平方米。设计融合现代酒店功能，通过层层叠状的景观退台，打造具有地域特色的高端政务接待酒店。">
+                    <img src="./images/宜昌峡州宾馆重建项目2.jpg" alt="文旅酒店|方案|方案" class="work-img"
+                         data-imgs='["./images/宜昌峡州宾馆重建项目2.jpg","./images/宜昌峡州宾馆重建项目1.jpg","./images/宜昌峡州宾馆重建项目3.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                <div class="work-item" 
+                     data-work-title="泰安浮云飞鸟酒店" 
+                     data-work-pinyin="TAI AN FU YUN FEI NIAO JIU DIAN" 
+                     data-work-subtitle="文体建筑 / 方案设计"
+                     data-work-desc="项目位于山东泰安市泰山景区周边，总建筑面积约5000平方米，定位为高端度假酒店。设计以'浮云飞鸟'为概念，采用轻盈的建筑形态与自然环境相融合，打造观山望岳的特色客房和休闲配套设施。">
+                    <img src="./images/泰安浮云飞鸟酒店1.jpg" alt="文体建筑|方案" class="work-img"
+                         data-imgs='["./images/泰安浮云飞鸟酒店1.jpg","./images/泰安浮云飞鸟酒店2.jpg","./images/泰安浮云飞鸟酒店3.jpg","./images/泰安浮云飞鸟酒店4.jpg","./images/泰安浮云飞鸟酒店5.jpg","./images/泰安浮云飞鸟酒店6.jpg","./images/泰安浮云飞鸟酒店7.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                 <div class="work-item" 
+                      data-work-title="九华山山崎溪.隐世" 
+                      data-work-pinyin="JIU HUA SHAN SHAN QI XI . YIN SHI" 
+                      data-work-subtitle="文旅酒店 / 方案设计"
+                      data-work-desc="项目位于安徽九华山景区，总建筑面积约1.45万平方米，定位为高端隐世度假酒店。设计遵循'隐于自然'的理念，采用低影响开发模式，打造与山水相融的禅意度假空间，配套禅修中心、素食餐厅、温泉汤屋等特色设施。">
+                    <img src="./images/九华山山崎溪.隐世1.jpg" alt="文旅酒店|方案|方案" class="work-img"
+                         data-imgs='["./images/九华山山崎溪.隐世1.jpg","./images/九华山山崎溪.隐世2.jpg","./images/九华山山崎溪.隐世3.jpg","./images/九华山山崎溪.隐世4.jpg","./images/九华山山崎溪.隐世5.jpg","./images/九华山山崎溪.隐世6.jpg","./images/九华山山崎溪.隐世7.jpg","./images/九华山山崎溪.隐世8.jpg","./images/九华山山崎溪.隐世9.jpg","./images/九华山山崎溪.隐世10.jpg","./images/九华山山崎溪.隐世11.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                 <div class="work-item" 
+                      data-work-title="三亚山崎溪" 
+                      data-work-pinyin="SAN YA SHAN QI XI" 
+                      data-work-subtitle="文旅酒店 / 方案设计"
+                      data-work-desc="项目位于海南三亚亚龙湾片区，总建筑面积约3800平方米，定位为高端度假酒店。设计融合热带滨海风情与日式极简美学，打造私密、奢华的度假体验，配套无边泳池、餐厅、SPA中心等高端设施。">
+                    <img src="./images/三亚山崎溪1.jpg" alt="文旅酒店|方案|方案" class="work-img"
+                         data-imgs='["./images/三亚山崎溪1.jpg","./images/三亚山崎溪1.jpg","./images/三亚山崎溪2.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                 <div class="work-item" 
+                      data-work-title="广州白云康养度假区" 
+                      data-work-pinyin="GUANG ZHOU BAI YUN KANG YANG DU JIA QU" 
+                      data-work-subtitle="文旅住宅 / 竞赛项目"
+                      data-work-desc="项目位于广州市白云区，定位为高端康养度假区。设计结合白云山生态资源，云”源于白云区，也源于云朵的物理形态，云可以通过不同形态呈现，可以液化成雨水，可以气化成空气。就如同公区流线型的设计，让公区各个功能空间流动起来，可以清晰可以模糊。打造集康养住宅、康复中心、休闲农业、文化体验于一体的复合型康养社区，为竞赛参赛方案。">
+                    <img src="./images/广州白云康养度假区2.jpg" alt="文旅住宅|方案|竞赛" class="work-img"
+                         data-imgs='["./images/广州白云康养度假区2.jpg","./images/广州白云康养度假区1.jpg","./images/广州白云康养度假区3.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+                 <div class="work-item" 
+                      data-work-title="惠州龙门山茶玉泉项目" 
+                      data-work-pinyin="HUI ZHOU LONG MEN SHAN CHA YU QUAN XIANG MU" 
+                      data-work-subtitle="文旅住宅 / 竞赛项目"
+                      data-work-desc="项目位于惠州龙门县，总规划面积约7万平方米，旨在通过功能附加，如强调竹文化元素，牵引禅文化的植入，以及通过产品特色打造“空中觅泉”及自身的度假氛围营造等方面实现突破的精品温泉酒店，以挑战者的姿态进入市场，重新定义温泉项目的评估标准。实现龙门茶山御泉度假区，湾区全时温泉旅游度假目的地、茶山御泉旅游区集散地、茶，竹，泉，禅体验基地，都市放松愉悦度假胜地。">
+                    <img src="./images/惠州龙门山茶玉泉项目1.jpg" alt="文旅住宅|方案|竞赛" class="work-img"
+                         data-imgs='["./images/惠州龙门山茶玉泉项目1.jpg","./images/惠州龙门山茶玉泉项目2.jpg","./images/惠州龙门山茶玉泉项目3.jpg","./images/惠州龙门山茶玉泉项目4.jpg"]'
+                         data-img-index="2">
+                    <div class="click-hint-btn">&gt;</div>
+                </div>
+            </div>
+
+            <!-- 联系方式展示区域 -->
+            <div class="contact-section" id="contactSection">
+                <div class="contact-container">
+                    <div class="contact-info">
+                        <h2 class="contact-title">联系方式</h2>
+                        <div class="contact-items">
+                            <div class="contact-item">
+                                <span class="contact-label">电话：</span>
+                                <span class="contact-value">13113907139</span>
+                            </div>
+                            <div class="contact-item">
+                                <span class="contact-label">邮箱：</span>
+                                <span class="contact-value">904261988@qq.com</span>
+                            </div>
+                        </div>
+                        <!-- 二维码容器 - 显示二维码 -->
+                        <div class="qrcode-container">
+                            <span class="qrcode-text">微信二维码</span>
+                            <img src="./qrcode.jpg" alt="微信二维码" class="qrcode-img">
+                        </div>
+                    </div>
+                    <!-- 个人照片 - 显示并移至右侧 -->
+                    <img src="./个人照片.jpg" alt="个人照片" class="personal-photo">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 作品弹窗DOM -->
+    <div class="work-modal" id="workModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">×</button>
+            <button class="modal-btn modal-prev" id="modalPrev">←</button>
+            <button class="modal-btn modal-next" id="modalNext">→</button>
+            <img src="" alt="作品图片" class="modal-img" id="modalImg">
+            <div class="modal-index" id="modalIndex">1 / 3</div>
+        </div>
+    </div>
+
+    <script>
+        // 核心元素获取
+        const leftPanel = document.getElementById('leftPanel');
+        const worksTitle = document.getElementById('worksTitle');
+        const worksContainer = document.getElementById('worksContainer');
+        const leftWorkTitle = document.getElementById('leftWorkTitle');
+        const workTitleMain = document.getElementById('workTitleMain');
+        const workTitlePinyin = document.getElementById('workTitlePinyin'); 
+        const workTitleSub = document.getElementById('workTitleSub');
+        const workDesc = document.getElementById('workDesc');
+        const contactSection = document.getElementById('contactSection');
+
+        // 弹窗元素
+        const workModal = document.getElementById('workModal');
+        const modalImg = document.getElementById('modalImg');
+        const modalPrev = document.getElementById('modalPrev');
+        const modalNext = document.getElementById('modalNext');
+        const modalClose = document.getElementById('modalClose');
+        const modalIndex = document.getElementById('modalIndex');
+
+        let triggerStage = 0;
+        let scrollCount = 0; 
+        let isTitleFlied = false; 
+        let currentImgs = [];
+        let currentImgIdx = 0;
+        let isScrolling = false;
+        let lastWorksScrollTop = 0;
+
+        // 阶段1：左侧收缩，显示标题
+        function triggerStage1() {
+            requestAnimationFrame(() => {
+                leftPanel.classList.add('shrink');
+                worksTitle.classList.add('active');
+                triggerStage = 1;
+            });
+        }
+
+        // 阶段2：同时显示作品标题和作品区
+        function triggerStage2() {
+            if (isTitleFlied) return;
+            requestAnimationFrame(() => {
+                worksTitle.classList.remove('active');
+                updateLeftWorkTitle(0);
+                worksContainer.classList.add('active');
+                triggerStage = 4;
+                isTitleFlied = true;
+            });
+        }
+
+        // 阶段5：显示联系方式区域
+        function triggerStage5() {
+            requestAnimationFrame(() => {
+                lastWorksScrollTop = worksContainer.scrollTop;
+                leftPanel.classList.add('complete-shrink');
+                leftPanel.style.pointerEvents = 'none';
+                leftWorkTitle.classList.remove('active');
+                worksContainer.style.opacity = 0;
+                worksContainer.style.pointerEvents = 'none';
+                contactSection.classList.add('active');
+                triggerStage = 5;
+            });
+        }
+
+        // 还原初始状态
+        function backToInitialState() {
+            requestAnimationFrame(() => {
+                leftPanel.classList.remove('shrink');
+                leftPanel.classList.remove('complete-shrink');
+                leftPanel.style.width = '';
+                leftPanel.style.height = '';
+                leftPanel.style.pointerEvents = 'auto';
+                worksTitle.classList.remove('active');
+                worksContainer.classList.remove('active');
+                worksContainer.scrollTop = 0; 
+                worksContainer.style.opacity = 1;
+                worksContainer.style.pointerEvents = 'auto';
+                leftWorkTitle.classList.remove('active');
+                contactSection.classList.remove('active');
+                triggerStage = 0;
+                scrollCount = 0;
+                isTitleFlied = false;
+            });
+        }
+
+        // 更新左侧作品标题和简介
+        function updateLeftWorkTitle(activeItemIndex) {
+            const workItems = document.querySelectorAll('.work-item');
+            if (activeItemIndex >= 0 && activeItemIndex < workItems.length) {
+                const activeItem = workItems[activeItemIndex];
+                workTitleMain.textContent = activeItem.dataset.workTitle;
+                workTitlePinyin.textContent = activeItem.dataset.workPinyin; 
+                workTitleSub.textContent = activeItem.dataset.workSubtitle;
+                workDesc.textContent = activeItem.dataset.workDesc || '';
+                leftWorkTitle.classList.add('active');
+            } else {
+                leftWorkTitle.classList.remove('active');
+            }
+        }
+
+        // 监听滚动，更新左侧标题和简介
+        function handleWorksScroll() {
+            if (triggerStage !== 4) return;
+
+            const workItems = document.querySelectorAll('.work-item');
+            const containerScrollTop = worksContainer.scrollTop;
+            const viewportHeight = window.innerHeight;
+            
+            workItems.forEach((item, index) => {
+                const itemOffsetTop = item.offsetTop;
+                const itemOffsetBottom = itemOffsetTop + item.offsetHeight;
+                const itemTopInView = itemOffsetTop - containerScrollTop;
+                const itemBottomInView = itemOffsetBottom - containerScrollTop;
+                
+                if (itemTopInView < viewportHeight / 2 && itemBottomInView > viewportHeight / 2) {
+                    updateLeftWorkTitle(index);
+                }
+            });
+        }
+
+        // 打开作品弹窗
+        function openModal(imgs, startIdx = 0) {
+            try {
+                const fixedImgsStr = typeof imgs === 'string' ? imgs.replace(/\\/g, '\\\\') : imgs;
+                currentImgs = typeof fixedImgsStr === 'string' ? JSON.parse(fixedImgsStr) : fixedImgsStr;
+            } catch (e) {
+                console.error('图片数组解析失败:', e);
+                currentImgs = [];
+                return;
+            }
+            currentImgIdx = Math.max(0, Math.min(startIdx, currentImgs.length - 1));
+            
+            if (currentImgs.length > 0) {
+                modalImg.src = currentImgs[currentImgIdx];
+                modalIndex.textContent = `${currentImgIdx + 1} / ${currentImgs.length}`;
+                workModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        // 关闭作品弹窗
+        function closeModal() {
+            workModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // 切换弹窗图片
+        function changeModalImg(direction) {
+            if (currentImgs.length === 0) return;
+            
+            currentImgIdx += direction;
+            if (currentImgIdx < 0) {
+                currentImgIdx = currentImgs.length - 1;
+            } else if (currentImgIdx >= currentImgs.length) {
+                currentImgIdx = 0;
+            }
+            
+            modalImg.src = currentImgs[currentImgIdx];
+            modalIndex.textContent = `${currentImgIdx + 1} / ${currentImgs.length}`;
+        }
+
+        // 鼠标滚轮触发逻辑
+        window.addEventListener('wheel', (e) => {
+            if (workModal.classList.contains('active')) {
+                e.deltaY > 0 ? changeModalImg(1) : changeModalImg(-1);
+                return;
+            }
+
+            if (isScrolling) return;
+            
+            isScrolling = true;
+            setTimeout(() => { isScrolling = false; }, 800);
+
+            if (e.deltaY > 0) {
+                scrollCount++;
+                switch(triggerStage) {
+                    case 0: triggerStage1(); break;
+                    case 1: triggerStage2(); break;
+                    case 4: 
+                        const containerHeight = worksContainer.scrollHeight;
+                        const viewportHeight = window.innerHeight;
+                        const containerScrollTop = worksContainer.scrollTop;
+                        
+                        if (containerScrollTop + viewportHeight >= containerHeight - 600) {
+                            triggerStage5();
+                        } else {
+                            worksContainer.scrollBy({ top: window.innerHeight, left: 0, behavior: 'smooth' });
+                            setTimeout(handleWorksScroll, 100);
+                        }
+                        break;
+                    case 5: backToInitialState(); break;
+                }
+            } else if (e.deltaY < 0) {
+                if (triggerStage === 0) {
+                    triggerStage5();
+                } else if (triggerStage === 5) {
+                    leftPanel.classList.remove('complete-shrink');
+                    leftPanel.classList.add('shrink');
+                    leftPanel.style.pointerEvents = 'auto';
+                    worksContainer.classList.add('active');
+                    worksContainer.style.opacity = 1;
+                    worksContainer.style.pointerEvents = 'auto';
+                    contactSection.classList.remove('active');
+                    triggerStage = 4;
+                    requestAnimationFrame(() => {
+                        worksContainer.scrollTop = lastWorksScrollTop;
+                        updateLeftWorkTitle(Math.floor(lastWorksScrollTop / window.innerHeight));
+                    });
+                } else if (triggerStage === 4) {
+                    if (worksContainer.scrollTop <= 0) {
+                        backToInitialState();
+                    } else {
+                        worksContainer.scrollBy({ top: -window.innerHeight, left: 0, behavior: 'smooth' });
+                        setTimeout(handleWorksScroll, 100);
+                    }
+                } else if (triggerStage > 0) {
+                    scrollCount--;
+                    backToInitialState();
+                }
+            }
+        }, { passive: true });
+
+        // 键盘触发逻辑
+        document.addEventListener('keydown', (e) => {
+            if (workModal.classList.contains('active')) {
+                switch(e.key) {
+                    case 'ArrowLeft': changeModalImg(-1); e.preventDefault(); break;
+                    case 'ArrowRight': changeModalImg(1); e.preventDefault(); break;
+                    case 'Escape': closeModal(); e.preventDefault(); break;
+                }
+                return;
+            }
+
+            if (isScrolling) return;
+            
+            isScrolling = true;
+            setTimeout(() => { isScrolling = false; }, 800);
+
+            if (e.key === 'ArrowDown') {
+                if (triggerStage < 4) {
+                    scrollCount++;
+                    switch(triggerStage) {
+                        case 0: triggerStage1(); break;
+                        case 1: triggerStage2(); break;
+                    }
+                } else if (triggerStage === 4) {
+                    const containerHeight = worksContainer.scrollHeight;
+                    const viewportHeight = window.innerHeight;
+                    const containerScrollTop = worksContainer.scrollTop;
+                    
+                    if (containerScrollTop + viewportHeight >= containerHeight - 200) {
+                        triggerStage5();
+                    } else {
+                        worksContainer.scrollBy({ top: window.innerHeight, left: 0, behavior: 'smooth' });
+                        setTimeout(handleWorksScroll, 100);
+                    }
+                } else if (triggerStage === 5) {
+                    backToInitialState();
+                }
+            } else if (e.key === 'ArrowUp') {
+                if (triggerStage === 0) {
+                    triggerStage5();
+                } else if (triggerStage === 5) {
+                    leftPanel.classList.remove('complete-shrink');
+                    leftPanel.classList.add('shrink');
+                    leftPanel.style.pointerEvents = 'auto';
+                    worksContainer.classList.add('active');
+                    worksContainer.style.opacity = 1;
+                    worksContainer.style.pointerEvents = 'auto';
+                    contactSection.classList.remove('active');
+                    triggerStage = 4;
+                    requestAnimationFrame(() => {
+                        worksContainer.scrollTop = lastWorksScrollTop;
+                        updateLeftWorkTitle(Math.floor(lastWorksScrollTop / window.innerHeight));
+                    });
+                } else if (triggerStage === 4) {
+                    if (worksContainer.scrollTop <= 0) {
+                        backToInitialState();
+                    } else {
+                        worksContainer.scrollBy({ top: -window.innerHeight, left: 0, behavior: 'smooth' });
+                        setTimeout(handleWorksScroll, 100);
+                    }
+                } else if (triggerStage > 0) {
+                    backToInitialState();
+                }
+            } else if (e.key === 'Escape' && triggerStage > 0) {
+                backToInitialState();
+                e.preventDefault();
+            }
+        });
+
+        // 绑定图片点击事件
+        document.querySelectorAll('.work-img').forEach(img => {
+            img.onclick = null;
+            img.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const imgs = e.target.dataset.imgs;
+                const startIdx = parseInt(e.target.dataset.imgIndex) || 0;
+                openModal(imgs, startIdx);
+            }, { capture: true });
+        });
+
+        // 绑定点击提示按钮事件
+        document.querySelectorAll('.click-hint-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const workItem = btn.closest('.work-item');
+                const img = workItem.querySelector('.work-img');
+                const imgs = img.dataset.imgs;
+                const startIdx = parseInt(img.dataset.imgIndex) || 0;
+                openModal(imgs, startIdx);
+            });
+        });
+
+        // 绑定弹窗控制事件
+        modalPrev.addEventListener('click', () => changeModalImg(-1));
+        modalNext.addEventListener('click', () => changeModalImg(1));
+        modalClose.addEventListener('click', closeModal);
+        workModal.addEventListener('click', (e) => {
+            if (e.target === workModal) closeModal();
+        });
+
+        // 绑定作品容器滚动事件
+        let scrollTimer = null;
+        worksContainer.addEventListener('scroll', () => {
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(handleWorksScroll, 16);
+        });
+
+        // 窗口大小变化时重新计算标题和简介
+        window.addEventListener('resize', () => {
+            if (triggerStage === 4) {
+                handleWorksScroll();
+            }
+            // 检测设备方向
+            checkOrientation();
+        });
+
+        // 检测设备是否为移动设备
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // 检测设备方向
+        function checkOrientation() {
+            const orientationLock = document.getElementById('orientationLock');
+            const isMobile = isMobileDevice();
+            const isPortrait = window.innerWidth < window.innerHeight;
+            const isSmallScreen = window.innerWidth <= 768;
+            
+            if (isMobile && isPortrait && isSmallScreen) {
+                // 移动设备竖屏
+                orientationLock.classList.add('active');
+            } else {
+                // 横屏或非移动设备
+                orientationLock.classList.remove('active');
+            }
+        }
+
+        // 初始化检测
+        checkOrientation();
+
+        // 监听设备方向变化
+        window.addEventListener('orientationchange', checkOrientation);
+
+        // 触摸事件处理
+        let touchStartY = 0;
+        let touchEndY = 0;
+
+        window.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        });
+
+        window.addEventListener('touchend', (e) => {
+            if (workModal.classList.contains('active')) {
+                touchEndY = e.changedTouches[0].clientY;
+                touchStartY - touchEndY > 50 ? changeModalImg(1) : (touchEndY - touchStartY > 50 ? changeModalImg(-1) : null);
+                return;
+            }
+
+            if (isScrolling) return;
+            
+            isScrolling = true;
+            setTimeout(() => { isScrolling = false; }, 1200); // 增加超时时间，减慢响应速度
+
+            touchEndY = e.changedTouches[0].clientY;
+            const diff = touchStartY - touchEndY;
+
+            if (Math.abs(diff) > 80) { // 增加滑动阈值，需要滑动更长距离才触发翻页
+                if (diff > 0) {
+                    // 向上滑动 - 前进
+                    scrollCount++;
+                    switch(triggerStage) {
+                        case 0: triggerStage1(); break;
+                        case 1: triggerStage2(); break;
+                        case 4: 
+                            const containerHeight = worksContainer.scrollHeight;
+                            const viewportHeight = window.innerHeight;
+                            const containerScrollTop = worksContainer.scrollTop;
+                            
+                            if (containerScrollTop + viewportHeight >= containerHeight - 600) {
+                                triggerStage5();
+                            } else {
+                                worksContainer.scrollBy({ top: window.innerHeight, left: 0, behavior: 'smooth' });
+                                setTimeout(handleWorksScroll, 100);
+                            }
+                            break;
+                        case 5: backToInitialState(); break;
+                    }
+                } else {
+                    // 向下滑动 - 后退
+                    scrollCount--;
+                    switch(triggerStage) {
+                        case 0: 
+                            // 从初始状态向下滑动，直接到联系信息
+                            triggerStage5();
+                            break;
+                        case 1: 
+                            // 从阶段1向下滑动，返回初始状态
+                            backToInitialState();
+                            break;
+                        case 4: 
+                            // 从作品列表向下滑动
+                            if (worksContainer.scrollTop <= 0) {
+                                // 滚动到顶部，返回初始状态
+                                backToInitialState();
+                            } else {
+                                // 向上滚动一个屏幕
+                                worksContainer.scrollBy({ top: -window.innerHeight, left: 0, behavior: 'smooth' });
+                                setTimeout(handleWorksScroll, 100);
+                            }
+                            break;
+                        case 5: 
+                            // 从联系信息向下滑动，返回作品列表
+                            leftPanel.classList.remove('complete-shrink');
+                            leftPanel.classList.add('shrink');
+                            leftPanel.style.pointerEvents = 'auto';
+                            worksContainer.classList.add('active');
+                            worksContainer.style.opacity = 1;
+                            worksContainer.style.pointerEvents = 'auto';
+                            contactSection.classList.remove('active');
+                            triggerStage = 4;
+                            requestAnimationFrame(() => {
+                                worksContainer.scrollTop = lastWorksScrollTop;
+                                updateLeftWorkTitle(Math.floor(lastWorksScrollTop / window.innerHeight));
+                            });
+                            break;
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
